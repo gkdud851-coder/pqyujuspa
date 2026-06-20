@@ -1,0 +1,2 @@
+Please upload your image files directly into this directory (src/images/) using the file explorer.
+Once uploaded, the app will automatically load them.

@@ -1,0 +1,6 @@
+{
+  "name": "Yuju Spa Phu Quoc",
+  "description": "최상의 힐링 마사지 서비스를 제공하는 푸꾸옥 유주스파입니다. 주소, 연락처, 운영시간 정보 및 인스타그램 연결을 제공합니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
