@@ -22,11 +22,6 @@ import {
   Briefcase,
   Layers,
   Sparkle,
-  Music,
-  Volume2,
-  VolumeX,
-  Pause,
-  Play,
   HelpCircle,
   ChevronDown,
   ChevronUp
@@ -205,8 +200,6 @@ function StepImageSlider({ images, fallbackKey, alt }: StepImageSliderProps) {
   );
 }
 
-const HEALING_BGM_URL = "https://archive.org/download/GymnopedieNo.1_447/ErikSatie-GymnopedieNo.1.mp3";
-
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hoveredZone, setHoveredZone] = useState<'spa' | 'nail' | null>(null);
@@ -214,54 +207,8 @@ export default function App() {
   const [activeServiceTab, setActiveServiceTab] = useState<'spa' | 'nail'>('spa');
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Sound Therapy states - simplified single track
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   // FAQ state
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    // Pre-initialize and preload audio for instant tactile response on click
-    try {
-      const audio = new Audio(HEALING_BGM_URL);
-      audio.loop = true;
-      audio.volume = 0.25; // Gentle, calming volume level
-      audio.preload = "auto";
-      audioRef.current = audio;
-    } catch (e) {
-      console.error("Failed preloading background music:", e);
-    }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, []);
-
-  const handleToggleAudio = () => {
-    try {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(HEALING_BGM_URL);
-        audioRef.current.loop = true;
-        audioRef.current.volume = 0.25;
-        audioRef.current.preload = "auto";
-      }
-
-      if (isPlayingAudio) {
-        audioRef.current.pause();
-        setIsPlayingAudio(false);
-      } else {
-        setIsPlayingAudio(true);
-        audioRef.current.play().catch(err => {
-          console.warn("Audio playback gesture caught or offline: ", err);
-        });
-      }
-    } catch (e) {
-      console.error("Audio toggle failed:", e);
-    }
-  };
 
 
 
@@ -1321,49 +1268,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* ----------------- SOUND THERAPY & BGM PLAYER WIDGET ----------------- */}
-      <div id="sound-therapy-bgm" className="fixed bottom-6 left-6 z-50 flex items-center font-sans">
-        <button 
-          onClick={handleToggleAudio}
-          className={`h-11 rounded-full px-5 flex items-center gap-3 shadow-2xl border transition-all duration-300 backdrop-blur-md cursor-pointer ${
-            isPlayingAudio 
-              ? "bg-stone-900/95 border-amber-400/60 text-white" 
-              : "bg-white/90 hover:bg-white border-stone-200/80 text-stone-800"
-          }`}
-          aria-label="Toggle Spa Sound Therapy"
-        >
-          {isPlayingAudio ? (
-            <div className="flex gap-[2.5px] items-end h-3 w-3.5 shrink-0">
-              <span className="w-[2.5px] bg-amber-400 rounded-full animate-bounce h-2.5" style={{ animationDuration: '0.6s' }}></span>
-              <span className="w-[2.5px] bg-amber-400 rounded-full animate-bounce h-3.5" style={{ animationDuration: '0.4s' }}></span>
-              <span className="w-[2.5px] bg-amber-400 rounded-full animate-bounce h-2" style={{ animationDuration: '0.8s' }}></span>
-            </div>
-          ) : (
-            <Music className="w-3.5 h-3.5 text-stone-400 animate-pulse shrink-0" />
-          )}
-          
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-bold tracking-wider leading-tight">
-              {isPlayingAudio ? "Serene Healing Piano" : "Spa Sound Therapy"}
-            </span>
-            <span className="text-[8px] text-stone-400 uppercase tracking-widest font-mono font-medium leading-none mt-0.5">
-              {isPlayingAudio ? "Serene Piano Hymn" : "Turn Music On"}
-            </span>
-          </div>
 
-          <div className="ml-1 shrink-0">
-            {isPlayingAudio ? (
-              <span className="text-[9px] font-bold text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded-full font-serif shrink-0 border border-amber-400/30">
-                PLAYING
-              </span>
-            ) : (
-              <span className="text-[9px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full font-serif shrink-0">
-                OFF
-              </span>
-            )}
-          </div>
-        </button>
-      </div>
     </div>
   );
 }
