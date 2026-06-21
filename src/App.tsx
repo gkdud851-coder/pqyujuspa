@@ -21,7 +21,15 @@ import {
   Shield,
   Briefcase,
   Layers,
-  Sparkle
+  Sparkle,
+  Music,
+  Volume2,
+  VolumeX,
+  Pause,
+  Play,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 // ----------------------------------------------------
@@ -197,12 +205,54 @@ function StepImageSlider({ images, fallbackKey, alt }: StepImageSliderProps) {
   );
 }
 
+const HEALING_BGM_URL = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Bach_Jesu_Joy_of_Mans_Desiring_piano.mp3";
+
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hoveredZone, setHoveredZone] = useState<'spa' | 'nail' | null>(null);
   const [isContactMenuOpen, setIsContactMenuOpen] = useState(false);
   const [activeServiceTab, setActiveServiceTab] = useState<'spa' | 'nail'>('spa');
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Sound Therapy states - simplified single track
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // FAQ state
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  const handleToggleAudio = () => {
+    try {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(HEALING_BGM_URL);
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.35; // Gentle background volume
+      }
+
+      if (isPlayingAudio) {
+        audioRef.current.pause();
+        setIsPlayingAudio(false);
+      } else {
+        setIsPlayingAudio(true);
+        audioRef.current.play().catch(err => {
+          console.log("Audio play failed under user gesture:", err);
+          setIsPlayingAudio(false);
+        });
+      }
+    } catch (e) {
+      console.error("Audio toggle failed:", e);
+      setIsPlayingAudio(false);
+    }
+  };
 
 
 
@@ -1012,6 +1062,79 @@ export default function App() {
         </div>
       </section>
 
+      {/* ----------------- FAQ (FREQUENTLY ASKED QUESTIONS) ACCORDION ----------------- */}
+      <section id="faq" className="py-24 bg-[#FAF9F6] border-t border-stone-200/80 scroll-mt-16 text-left">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-serif text-stone-900">Frequently Asked Questions</h2>
+            <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">YUJU SPA Guide</p>
+            <div className="w-12 h-[1px] bg-amber-400 mx-auto mt-3"></div>
+            <p className="text-stone-500 text-xs mt-4">Find answers to the most common questions our guests ask before visiting YUJU SPA.</p>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: "What are the rules for free resort/airport pickup & drop-off?",
+                a: "When booking a 90-minute or longer therapy for 2 or more adult guests, 1 complimentary pickup or drop-off transfer can be selected for Phu Quoc Airport as well as all central, southern, and northern regions of the island."
+              },
+              {
+                q: "Is the therapist tip included in the price?",
+                a: "Yes! All premium thermal spa packages at YUJU SPA include therapist service tips transparently. There is absolutely no extra pressure or obligation to pay separate tips."
+              },
+              {
+                q: "Can I store my heavy luggage here for free on my checkout day?",
+                a: "Absolutely! We offer complimentary luggage storage service for our guests during our operational hours. Store your heavy bags safely with our concierge and explore Phu Quoc with absolute comfort."
+              },
+              {
+                q: "Are shower rooms available and is it free?",
+                a: "Yes! Fully-equipped, hygienic separate male/female shower complexes are provided for your fresh feeling. Free towels, organic shampoos, and body washes are always ready for you."
+              },
+              {
+                q: "Can I make a reservation for the same day?",
+                a: "Yes, you can request same-day reservations subject to slot availability. However, to secure your preferred time slots, we recommend booking 1-2 days in advance!"
+              }
+            ].map((item, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className="bg-white border border-stone-200/80 rounded-xl overflow-hidden shadow-xs hover:border-amber-500/20 transition-all duration-300"
+                >
+                  <button
+                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                    className="w-full py-5 px-6 flex justify-between items-center text-left hover:bg-stone-50/50 transition-colors cursor-pointer focus:outline-none"
+                  >
+                    <div className="pr-4">
+                      <h3 className="font-semibold text-stone-850 text-[14px] sm:text-[15px] flex items-start gap-2.5">
+                        <span className="text-amber-600 font-serif font-bold text-lg leading-none shrink-0">Q.</span>
+                        <span>{item.q}</span>
+                      </h3>
+                    </div>
+                    <div className="shrink-0 text-stone-400 p-1 bg-stone-50 rounded-lg">
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-amber-600" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </button>
+                  
+                  <div 
+                    className={`transition-all duration-300 overflow-hidden ${
+                      isOpen ? "max-h-[300px] border-t border-stone-100" : "max-h-0"
+                    }`}
+                  >
+                    <div className="p-6 bg-[#FAF9F6]/50 text-stone-650 text-sm leading-relaxed">
+                      <div className="flex gap-2">
+                        <span className="font-serif font-bold text-stone-400 shrink-0">A.</span>
+                        <p className="text-stone-700 font-medium whitespace-pre-line">{item.a}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ----------------- COMPREHENSIVE LOCATION SECTION WITH GOOGLE MAP ----------------- */}
       <section id="find-us" className="py-24 bg-white border-t border-stone-200/80 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-6">
@@ -1186,6 +1309,50 @@ export default function App() {
           ) : (
             <Phone className="w-6 h-6 text-white" />
           )}
+        </button>
+      </div>
+
+      {/* ----------------- SOUND THERAPY & BGM PLAYER WIDGET ----------------- */}
+      <div id="sound-therapy-bgm" className="fixed bottom-6 left-6 z-50 flex items-center font-sans">
+        <button 
+          onClick={handleToggleAudio}
+          className={`h-11 rounded-full px-5 flex items-center gap-3 shadow-2xl border transition-all duration-300 backdrop-blur-md cursor-pointer ${
+            isPlayingAudio 
+              ? "bg-stone-900/95 border-amber-400/60 text-white" 
+              : "bg-white/90 hover:bg-white border-stone-200/80 text-stone-800"
+          }`}
+          aria-label="Toggle Spa Sound Therapy"
+        >
+          {isPlayingAudio ? (
+            <div className="flex gap-[2.5px] items-end h-3 w-3.5 shrink-0">
+              <span className="w-[2.5px] bg-amber-400 rounded-full animate-bounce h-2.5" style={{ animationDuration: '0.6s' }}></span>
+              <span className="w-[2.5px] bg-amber-400 rounded-full animate-bounce h-3.5" style={{ animationDuration: '0.4s' }}></span>
+              <span className="w-[2.5px] bg-amber-400 rounded-full animate-bounce h-2" style={{ animationDuration: '0.8s' }}></span>
+            </div>
+          ) : (
+            <Music className="w-3.5 h-3.5 text-stone-400 animate-pulse shrink-0" />
+          )}
+          
+          <div className="flex flex-col text-left">
+            <span className="text-[11px] font-bold tracking-wider leading-tight">
+              {isPlayingAudio ? "잔잔한 피아노 찬양" : "스파 배경음악"}
+            </span>
+            <span className="text-[8px] text-stone-400 uppercase tracking-widest font-mono font-medium leading-none mt-0.5">
+              {isPlayingAudio ? "Serene Piano Hymn" : "Turn Music On"}
+            </span>
+          </div>
+
+          <div className="ml-1 shrink-0">
+            {isPlayingAudio ? (
+              <span className="text-[9px] font-bold text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded-full font-serif shrink-0 border border-amber-400/30">
+                PLAYING
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full font-serif shrink-0">
+                OFF
+              </span>
+            )}
+          </div>
         </button>
       </div>
     </div>
