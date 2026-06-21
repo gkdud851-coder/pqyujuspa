@@ -205,7 +205,7 @@ function StepImageSlider({ images, fallbackKey, alt }: StepImageSliderProps) {
   );
 }
 
-const HEALING_BGM_URL = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Bach_Jesu_Joy_of_Mans_Desiring_piano.mp3";
+const HEALING_BGM_URL = "https://archive.org/download/GymnopedieNo.1_447/ErikSatie-GymnopedieNo.1.mp3";
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -222,7 +222,17 @@ export default function App() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    // Cleanup on unmount
+    // Pre-initialize and preload audio for instant tactile response on click
+    try {
+      const audio = new Audio(HEALING_BGM_URL);
+      audio.loop = true;
+      audio.volume = 0.25; // Gentle, calming volume level
+      audio.preload = "auto";
+      audioRef.current = audio;
+    } catch (e) {
+      console.error("Failed preloading background music:", e);
+    }
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -235,7 +245,8 @@ export default function App() {
       if (!audioRef.current) {
         audioRef.current = new Audio(HEALING_BGM_URL);
         audioRef.current.loop = true;
-        audioRef.current.volume = 0.35; // Gentle background volume
+        audioRef.current.volume = 0.25;
+        audioRef.current.preload = "auto";
       }
 
       if (isPlayingAudio) {
@@ -244,13 +255,11 @@ export default function App() {
       } else {
         setIsPlayingAudio(true);
         audioRef.current.play().catch(err => {
-          console.log("Audio play failed under user gesture:", err);
-          setIsPlayingAudio(false);
+          console.warn("Audio playback gesture caught or offline: ", err);
         });
       }
     } catch (e) {
       console.error("Audio toggle failed:", e);
-      setIsPlayingAudio(false);
     }
   };
 
@@ -431,7 +440,7 @@ export default function App() {
           <div className="md:hidden border-t border-stone-200 bg-[#FAF8F5]/98 py-5 px-6 space-y-4 shadow-xl absolute w-full left-0 z-50 text-left">
             <a href="#hero" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Main</a>
             <a href="#ambiance" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Ambiance</a>
-            <a href="#journey" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">10 Steps (10단계 여정)</a>
+            <a href="#journey" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">10-Step Journey</a>
             <a href="#services" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Services</a>
             <a href="#nail" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Nail Art</a>
             <a href="#find-us" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Contact</a>
@@ -1335,7 +1344,7 @@ export default function App() {
           
           <div className="flex flex-col text-left">
             <span className="text-[11px] font-bold tracking-wider leading-tight">
-              {isPlayingAudio ? "잔잔한 피아노 찬양" : "스파 배경음악"}
+              {isPlayingAudio ? "Serene Healing Piano" : "Spa Sound Therapy"}
             </span>
             <span className="text-[8px] text-stone-400 uppercase tracking-widest font-mono font-medium leading-none mt-0.5">
               {isPlayingAudio ? "Serene Piano Hymn" : "Turn Music On"}
