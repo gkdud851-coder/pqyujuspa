@@ -993,9 +993,9 @@ export default function App() {
           <div className="w-12 h-[1px] bg-amber-400 mx-auto mt-3 mb-10"></div>
           
           {/* Elfsight Instagram Feed Live Widget */}
-          <div className="w-full bg-white border border-stone-200/80 shadow-2xl p-4 md:p-6 rounded-xl">
+          <div className="w-full bg-white border border-stone-200/80 shadow-2xl p-4 md:p-6 rounded-xl flex justify-center items-center">
             {/* Elfsight Instagram Feed | 1 */}
-            <div className="elfsight-app-3f91e9c2-8f8e-4588-944b-58ed05d63454" data-elfsight-app-lazy="true"></div>
+            <div className="elfsight-app-3f91e9c2-8f8e-4588-944b-58ed05d63454 w-full flex justify-center" data-elfsight-app-lazy="true"></div>
           </div>
           
           <div className="mt-8">

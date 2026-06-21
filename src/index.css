@@ -12,3 +12,25 @@
     scroll-behavior: smooth;
   }
 }
+
+/* Elfsight Widget Centering */
+[class*="elfsight-app"] {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+[class*="elfsight-app"] > div {
+  margin: 0 auto !important;
+  float: none !important;
+}
+
+/* Target some inner containers Elfsight injects */
+[class*="elfsight-app"] iframe,
+[class*="elfsight-app"] [class*="Container"],
+[class*="elfsight-app"] [class*="Widget"] {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
