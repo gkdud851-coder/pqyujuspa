@@ -218,8 +218,8 @@ export default function App() {
       num: "01",
       icon: "🚗",
       title: "Resort & Airport Pickup",
-      titleKo: "Complementary Island-wide Transfer (1 Round Trip)",
-      desc: "Get 1 free round-trip transfer anywhere in Phu Quoc. When booking a VIP course for 2 or more guests, we provide comfortable, air-conditioned transport from the airport or any local resort to our spa, or from the spa back to your resort.",
+      titleKo: "Complementary Island-wide Transfer (Choice of Pickup or Dropoff)",
+      desc: "Get 1 complimentary single-trip transfer (Choice of Pickup OR Dropoff) anywhere in Phu Quoc. When booking a VIP course for 2 or more guests, we provide safe and comfortable transport from airport/resort to our spa, OR from our spa back to your resort/airport. (Includes secure luggage storage; choice of 1-way transfer only)",
       images: ["images/1. 픽업차량.JPG"],
       fallbackKey: "step1" as const
     },
@@ -937,7 +937,7 @@ export default function App() {
             {/* Bottom Brand Notes */}
             <div className="mt-12 bg-white/40 p-4 border border-stone-200/60 rounded text-center text-[11px] text-stone-500 space-y-1 font-sans">
               <p className="font-bold">* All prices are in VND (000's) | Prices include service charge and VAT. No hidden fee.</p>
-              <p className="text-[10.5px] leading-relaxed font-semibold">Get 1 free round-trip transfer anywhere in Phu Quoc. When booking a VIP course for 2 or more guests, safe and comfortable transport is provided from the airport or any local resort to our spa, or from the spa back to your resort. (Secure luggage storage is fully included)</p>
+              <p className="text-[10.5px] leading-relaxed font-semibold">Get 1 complimentary single-trip transfer (Choice of Pickup OR Dropoff) anywhere in Phu Quoc. When booking a VIP course for 2 or more guests, safe and comfortable transport is provided from airport/resort to spa, OR from spa back to resort/airport. (Secure luggage storage is fully included; 1-way transfer choice of either pickup or dropoff is provided per booking)</p>
             </div>
           </div>
         </div>
@@ -1186,7 +1186,7 @@ export default function App() {
       </footer>
 
       {/* ----------------- FLOATING CONTACT WIDGET ----------------- */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+      <div className="fixed bottom-[96px] right-6 z-50 flex flex-col items-end">
         {/* Menu list, appears when isContactMenuOpen is true */}
         <div className={`transition-all duration-300 transform origin-bottom-right flex flex-col gap-3 mb-3 ${
           isContactMenuOpen 
