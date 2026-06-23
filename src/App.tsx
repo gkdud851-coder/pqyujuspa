@@ -1208,14 +1208,27 @@ export default function App() {
             </div>
           </a>
 
-          {/* Option 2: Instagram DM */}
+          {/* Option 2: Spa Instagram DM */}
           <a 
-            href="https://www.instagram.com/yuju.nail_phuquoc/reels/" 
+            href="https://www.instagram.com/yuju.spa_phuquoc/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
           >
-            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Instagram DM</span>
+            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Spa Instagram DM</span>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
+              <Instagram className="w-5 h-5 text-white" />
+            </div>
+          </a>
+
+          {/* Option 3: Nail Instagram DM */}
+          <a 
+            href="https://www.instagram.com/yuju.nail_phuquoc/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+          >
+            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Nail Instagram DM</span>
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
               <Instagram className="w-5 h-5 text-white" />
             </div>
