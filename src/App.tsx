@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   MapPin, 
   Phone, 
@@ -24,7 +24,10 @@ import {
   Sparkle,
   HelpCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Music,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 
 // ----------------------------------------------------
@@ -32,7 +35,7 @@ import {
 // Supports both public/images/* and src/images/*
 // ----------------------------------------------------
 const srcImages = (import.meta as any).glob('/src/images/*.{png,jpg,jpeg,JPG,JPEG,PNG,webp,WEBP}', { eager: true, import: 'default' });
-const srcVideos = (import.meta as any).glob('/src/images/*.mp4', { eager: true, import: 'default' });
+const srcVideos = (import.meta as any).glob('/src/images/*.{mp4,MP4,mov,MOV,webm,WEBM,m4v,M4V}', { eager: true, import: 'default' });
 
 function resolveImage(path: string): string {
   const fileName = path.split('/').pop();
@@ -206,6 +209,77 @@ export default function App() {
   const [isContactMenuOpen, setIsContactMenuOpen] = useState(false);
   const [activeServiceTab, setActiveServiceTab] = useState<'spa' | 'nail'>('spa');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
+  // Sequential 3-video playlist (Video 1 -> Video 2 -> Video 3 -> Loop)
+  const heroVideos = useMemo(() => [
+    resolveVideo('images/메인영상.mp4'),
+    '/video2.mp4',
+    '/video3.mp4'
+  ], []);
+
+  const handleVideoEnded = () => {
+    setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
+  };
+
+  const handleVideoError = () => {
+    if (heroVideos.length > 1) {
+      setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
+    }
+  };
+
+  // Ensure next video plays smoothly when switched
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Handled silently
+      });
+    }
+  }, [currentVideoIndex]);
+
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Background music setup
+  useEffect(() => {
+    const audio = audioRef.current || (document.getElementById('bgm-audio-player') as HTMLAudioElement | null);
+    if (!audio) return;
+
+    audio.volume = 0.65;
+
+    // Optional autoplay attempt on page load
+    audio.play()
+      .then(() => {
+        setIsMusicPlaying(true);
+      })
+      .catch(() => {
+        // Browser requires direct button click
+        setIsMusicPlaying(false);
+      });
+  }, []);
+
+  const toggleMusic = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const audio = audioRef.current || (document.getElementById('bgm-audio-player') as HTMLAudioElement | null);
+    if (!audio) return;
+
+    if (audio.paused) {
+      audio.play()
+        .then(() => {
+          setIsMusicPlaying(true);
+        })
+        .catch((err) => {
+          console.warn("Audio playback error:", err);
+          setIsMusicPlaying(false);
+        });
+    } else {
+      audio.pause();
+      setIsMusicPlaying(false);
+    }
+  };
 
   // FAQ state
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
@@ -332,122 +406,140 @@ export default function App() {
 
 
   return (
-    <div id="main-container" className="min-h-screen bg-[#FAF8F5] text-stone-800 antialiased selection:bg-amber-100 selection:text-amber-950 font-sans scroll-smooth">
+    <div className="min-h-screen w-full bg-white flex justify-center selection:bg-amber-100 selection:text-amber-950 font-sans">
+      <div 
+        id="main-container" 
+        className="w-full max-w-[480px] min-h-screen bg-[#FAF8F5] text-stone-800 antialiased relative shadow-2xl border-x border-stone-200/80 scroll-smooth overflow-x-hidden flex flex-col"
+      >
       
       {/* ----------------- EXQUISITE HEADER NAV ----------------- */}
-      <nav id="nav-header" className="fixed top-0 left-0 right-0 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-stone-200/80 z-50 transition-all duration-300">
-        <div className="max-w-6xl mx-auto px-5 py-4 flex justify-between items-center">
-          
-          <a href="#hero" className="flex items-center gap-3 group focus:outline-none text-left">
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-amber-900/10 bg-amber-50 shrink-0 flex items-center justify-center transition-transform group-hover:scale-105">
-              <SafeImage 
-                src="images/푸꾸옥유주스파로고.jpg" 
-                alt="YUJU SPA Logo" 
-                fallbackKey="heroFallback"
-                className="w-full h-full object-cover" 
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-serif font-bold tracking-[0.15em] text-stone-900 uppercase leading-none">YUJU SPA</span>
-              <span className="text-[9px] uppercase tracking-widest text-[#B5945F] font-bold mt-1">Phu Quoc resort & nail</span>
-            </div>
-          </a>
-
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-7 text-[11px] uppercase tracking-widest font-bold text-stone-600">
-            <a href="#hero" className="hover:text-amber-800 transition-colors">Main</a>
-            <a href="#ambiance" className="hover:text-amber-800 transition-colors">Ambiance</a>
-            <a href="#journey" className="hover:text-amber-800 transition-colors">10 Steps</a>
-            <a href="#services" className="hover:text-amber-800 transition-colors">Services</a>
-            <a href="#nail" className="hover:text-amber-800 transition-colors">Nail Art</a>
-            <a href="#find-us" className="hover:text-amber-800 transition-colors">Contact</a>
-          </div>
-
-          <div className="hidden md:block">
-            <a 
-              href="#find-us"
-              className="bg-stone-900 hover:bg-stone-800 text-white text-[11px] font-bold uppercase tracking-wider px-6 py-2.5 transition active:scale-95 inline-block"
-            >
-              Book Now
+      <div className="fixed top-0 inset-x-0 z-50 flex justify-center pointer-events-none">
+        <nav 
+          id="nav-header" 
+          className="w-full max-w-[480px] bg-[#FAF8F5]/95 backdrop-blur-md border-b border-stone-200/80 pointer-events-auto transition-all duration-300 shadow-xs relative"
+        >
+          <div className="px-5 py-3.5 flex justify-between items-center">
+            <a href="#hero" className="flex items-center gap-3 group focus:outline-none text-left">
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-amber-900/10 bg-amber-50 shrink-0 flex items-center justify-center transition-transform group-hover:scale-105">
+                <SafeImage 
+                  src="images/푸꾸옥유주스파로고.jpg" 
+                  alt="YUJU SPA Logo" 
+                  fallbackKey="heroFallback"
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-serif font-bold tracking-[0.15em] text-stone-900 uppercase leading-none">YUJU SPA</span>
+                <span className="text-[9px] uppercase tracking-widest text-[#B5945F] font-bold mt-1">Phu Quoc resort & nail</span>
+              </div>
             </a>
-          </div>
 
-          {/* Mobile hamburger menu */}
-          <button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            className="md:hidden p-2 text-stone-850 hover:text-amber-850 focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Mobile slide down drawer */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-stone-200 bg-[#FAF8F5]/98 py-5 px-6 space-y-4 shadow-xl absolute w-full left-0 z-50 text-left">
-            <a href="#hero" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Main</a>
-            <a href="#ambiance" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Ambiance</a>
-            <a href="#journey" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">10-Step Journey</a>
-            <a href="#services" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Services</a>
-            <a href="#nail" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Nail Art</a>
-            <a href="#find-us" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Contact</a>
-            
-            <a 
-              href="#find-us"
-              onClick={() => setIsMenuOpen(false)}
-              className="w-full bg-[#B5945F] text-white py-3 text-xs font-bold uppercase tracking-widest text-center block"
+            {/* Mobile hamburger menu */}
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)} 
+              className="p-2 text-stone-850 hover:text-amber-850 focus:outline-none cursor-pointer"
+              aria-label="Toggle menu"
             >
-              Book Now
-            </a>
+              {isMenuOpen ? <X className="w-6 h-6 text-stone-900" /> : <Menu className="w-6 h-6 text-stone-900" />}
+            </button>
           </div>
-        )}
-      </nav>
 
-      {/* ----------------- DYNAMIC HERO BANNER WITH VIDEO BACKGROUND ----------------- */}
-      <section id="hero" className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-stone-900">
-        <div className="absolute inset-0 w-full h-full z-10">
+          {/* Mobile slide down drawer */}
+          {isMenuOpen && (
+            <div className="border-t border-stone-200 bg-[#FAF8F5]/98 py-5 px-6 space-y-4 shadow-xl absolute w-full left-0 z-50 text-left">
+              <a href="#hero" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Main</a>
+              <a href="#ambiance" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Ambiance</a>
+              <a href="#journey" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">10-Step Journey</a>
+              <a href="#services" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Services</a>
+              <a href="#nail" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Nail Art</a>
+              <a href="#find-us" onClick={() => setIsMenuOpen(false)} className="block font-bold text-stone-600 hover:text-amber-800 py-1 text-xs uppercase tracking-wider">Contact</a>
+              
+              <a 
+                href="#find-us"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full bg-[#B5945F] text-white py-3 text-xs font-bold uppercase tracking-widest text-center block"
+              >
+                Book Now
+              </a>
+            </div>
+          )}
+        </nav>
+      </div>
+
+      {/* ----------------- DYNAMIC HERO BANNER WITH FULL-VIEW VIDEO ----------------- */}
+      <section id="hero" className="w-full pt-[64px] bg-stone-950 flex flex-col scroll-mt-16">
+        {/* Full Uncut 9:16 Video Player Container with Sequential Multi-Video Looping */}
+        <div className="w-full relative aspect-[9/16] bg-black overflow-hidden flex items-center justify-center">
           <video 
             ref={videoRef}
-            className="w-full h-full object-cover opacity-65 filter brightness-90"
-            src={resolveVideo('images/메인영상.mp4')}
+            key={heroVideos[currentVideoIndex]}
+            className="w-full h-full object-contain"
+            src={heroVideos[currentVideoIndex]}
             autoPlay 
-            loop 
-            muted 
+            muted
             playsInline
+            onEnded={handleVideoEnded}
+            onError={handleVideoError}
           />
-        </div>
-        
-        {/* Sleek warm dark overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-stone-950/20 via-stone-950/40 to-[#FAF8F5] z-15"></div>
-        
-        <div className="relative z-20 text-center px-5 max-w-4xl mx-auto border-none">
-          <div className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-400 px-4 py-2 rounded-full mb-5 backdrop-blur-sm shadow-xs">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="text-[10px] md:text-xs uppercase tracking-widest font-extrabold">PHU QUOC NO.1 RETREAT & BEAUTY</span>
-          </div>
-          
-          <h1 className="text-3xl md:text-6xl font-serif text-white leading-tight mb-6 tracking-wide drop-shadow-xs">
-            The Beginning & End of Your Phu Quoc Journey,<br />
-            <span className="tracking-[0.1em] font-bold text-amber-400">YUJU SPA</span>
-          </h1>
-          
-          <div className="w-16 h-[1.5px] bg-amber-400/60 mx-auto mb-6"></div>
-          
-          <p className="text-base md:text-xl font-serif italic text-stone-200 leading-relaxed max-w-2xl mx-auto mb-8">
-            "I promise to prepare your tomorrow with the cleanest towels and the most sincere touch."
-          </p>
-          <p className="text-[10px] uppercase tracking-widest font-extrabold text-amber-400">— Madam YUJU, Phu Quoc —</p>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto px-4">
+          {/* Floating Glass Badge on Top-Left (Idea 3) */}
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-black/55 backdrop-blur-md px-3 py-1.5 rounded-full border border-amber-400/40 shadow-md pointer-events-none">
+            <span className="text-xs">🚗</span>
+            <div className="flex flex-col leading-none text-left">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
+                Free Transfer
+              </span>
+              <span className="text-[8px] text-stone-200/90 font-medium tracking-tight">
+                Pickup or Drop-off
+              </span>
+            </div>
+          </div>
+
+          {/* Video Indicators for multiple clips */}
+          {heroVideos.length > 1 && (
+            <div className="absolute top-4 right-4 z-20 flex gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1.5 rounded-full border border-white/20 pointer-events-auto">
+              {heroVideos.slice(0, 3).map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentVideoIndex(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    idx === currentVideoIndex ? "w-5 bg-amber-400" : "w-1.5 bg-white/40 hover:bg-white/70"
+                  }`}
+                  aria-label={`Switch to clip ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Subtle bottom shadow overlay to transition nicely to the action area */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-stone-950/80 to-transparent pointer-events-none"></div>
+        </div>
+
+        {/* Action Buttons moved cleanly underneath the full video */}
+        <div className="bg-stone-900 py-5 px-5 border-b border-stone-800 text-center">
+          {/* Complimentary Transfer Highlight Banner (Idea 1) */}
+          <div className="mb-3.5 px-3 py-2.5 bg-gradient-to-r from-amber-950/70 via-stone-900 to-amber-950/70 border border-amber-500/40 rounded-lg flex items-center justify-center gap-2.5 shadow-sm">
+            <span className="text-lg flex-shrink-0">🚗</span>
+            <div className="flex flex-col items-center text-center">
+              <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-amber-300">
+                Free Island-Wide Transfer
+              </span>
+              <span className="text-[9px] sm:text-[9.5px] text-stone-300 font-medium tracking-tight">
+                Complimentary Pickup or Drop-off anywhere in Phu Quoc (Airport & Resorts)
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
             <button 
               onClick={() => setIsContactMenuOpen(true)}
-              className="w-full sm:w-auto bg-amber-700 hover:bg-amber-850 text-white px-7 py-3.5 rounded-xs font-bold tracking-wider text-xs uppercase text-center transition shadow-md cursor-pointer whitespace-nowrap"
+              className="w-full bg-amber-700 hover:bg-amber-850 text-white py-3.5 px-4 rounded-xs font-bold tracking-wider text-xs uppercase text-center transition shadow-lg cursor-pointer"
             >
               Real-time Booking & Inquiries
             </button>
             <a 
               href="#services" 
-              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 px-7 py-3.5 rounded-xs font-bold tracking-wider text-xs uppercase text-center backdrop-blur-xs transition whitespace-nowrap"
+              className="w-full bg-stone-800 hover:bg-stone-750 text-stone-200 border border-stone-700 py-3.5 px-4 rounded-xs font-bold tracking-wider text-xs uppercase text-center backdrop-blur-sm transition shadow-sm"
             >
               Explore Spa Menu
             </a>
@@ -455,54 +547,54 @@ export default function App() {
         </div>
       </section>
 
-      {/* ----------------- CORE BRAND STATS GRID ----------------- */}
-      <section className="py-12 bg-white border-y border-stone-200/60">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 text-center">
+      {/* ----------------- CORE BRAND STATS GRID (Idea 4: Transfer 1st place) ----------------- */}
+      <section className="py-10 bg-white border-y border-stone-200/60">
+        <div className="px-4 grid grid-cols-3 gap-y-6 gap-x-2 text-center">
           <div className="flex flex-col items-center">
-            <div className="text-xl md:text-2.5xl mb-2">💝</div>
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-900">Heart Fund</h4>
-            <p className="text-[9px] text-stone-550 mt-1 uppercase font-semibold">Vietnam Kids Support</p>
+            <div className="text-xl mb-1.5">🚗</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Free Transfer</h4>
+            <p className="text-[8px] text-amber-700 mt-0.5 uppercase font-bold">Pickup or Drop-off</p>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xl md:text-2.5xl mb-2">🙏</div>
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-900">Disaster Relief</h4>
-            <p className="text-[9px] text-stone-550 mt-1 uppercase font-semibold">Earthquake & Flood</p>
+            <div className="text-xl mb-1.5">🚿</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Shower</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Full Facilities</p>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xl md:text-2.5xl mb-2">👶</div>
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-900">Kids & Pregnant</h4>
-            <p className="text-[9px] text-stone-550 mt-1 uppercase font-semibold">Specialized Care</p>
+            <div className="text-xl mb-1.5">🧳</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Luggage</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Free Storage</p>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xl md:text-2.5xl mb-2">✨</div>
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-900">Premium Hygiene</h4>
-            <p className="text-[9px] text-stone-550 mt-1 uppercase font-semibold">1:1 Towel & Tub</p>
+            <div className="text-xl mb-1.5">👶</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Kids & Pregnant</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Special Care</p>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xl md:text-2.5xl mb-2">🚿</div>
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-900">Shower Room</h4>
-            <p className="text-[9px] text-stone-550 mt-1 uppercase font-semibold">Full Facilities</p>
+            <div className="text-xl mb-1.5">✨</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Hygiene</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">1:1 Towel & Tub</p>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xl md:text-2.5xl mb-2">🧳</div>
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-900">Luggage storage</h4>
-            <p className="text-[9px] text-stone-550 mt-1 uppercase font-semibold">Free safe storage</p>
+            <div className="text-xl mb-1.5">💝</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Charity Fund</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Kids & Relief</p>
           </div>
         </div>
       </section>
 
       {/* ----------------- NATIVE PREMIUM ARCHITECTURAL FLOOR LAYOUT (AMBIANCE) ----------------- */}
-      <section id="ambiance" className="py-24 max-w-6xl mx-auto px-6 scroll-mt-16">
-        <div className="text-center mb-16">
-          <h2 className="text-3.5xl font-serif tracking-tight text-stone-900 font-medium h2" id="our-space-title">Our Space</h2>
-          <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2 font-sans">Elegantly Appointed Multi-Floor Healing Ambiance</p>
+      <section id="ambiance" className="py-20 px-5 scroll-mt-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-serif tracking-tight text-stone-900 font-medium h2" id="our-space-title">Our Space</h2>
+          <p className="text-[10.5px] text-amber-700 uppercase tracking-widest font-extrabold mt-2 font-sans">Elegantly Appointed Multi-Floor Healing Ambiance</p>
           <div className="w-12 h-[1px] bg-amber-300 mx-auto mt-4"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="flex flex-col gap-6">
           {/* 1F Zone Card */}
           <div className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col group">
-            <div className="h-64 overflow-hidden relative">
+            <div className="h-56 overflow-hidden relative">
               <SafeImage 
                 src="images/매장.JPG" 
                 alt="1F Premium Spa & Nail" 
@@ -513,25 +605,25 @@ export default function App() {
                 1F
               </div>
             </div>
-            <div className="p-6 flex-1 flex flex-col justify-between text-left">
+            <div className="p-5 flex-1 flex flex-col justify-between text-left">
               <div>
-                <h3 className="text-lg font-serif font-bold text-stone-900 mb-2">Premium Spa & Nail Salon</h3>
-                <p className="text-[11px] text-[#B5945F] font-bold uppercase tracking-wider mb-3">1F Spa Reception & Luxury Nail Boutique</p>
+                <h3 className="text-base font-serif font-bold text-stone-900 mb-1.5">Premium Spa & Nail Salon</h3>
+                <p className="text-[10px] text-[#B5945F] font-bold uppercase tracking-wider mb-2.5">1F Spa Reception & Luxury Nail Boutique</p>
                 <p className="text-xs text-stone-600 leading-relaxed font-semibold">
                   Blending warm aesthetics with comfort, the first floor features our sophisticated nail art bar, private 1-on-1 care rooms, a secure luggage storage zone, and separate private hot shower facilities for you to refresh before or after your treatment.
                 </p>
               </div>
-              <div className="mt-5 pt-4 border-t border-stone-100 flex gap-2 flex-wrap text-[10px] uppercase font-bold text-stone-500">
-                <span className="bg-stone-50 px-2.5 py-1 rounded border border-stone-150">Main Lobby</span>
-                <span className="bg-stone-50 px-2.5 py-1 rounded border border-stone-150">Nail Bar</span>
-                <span className="bg-stone-50 px-2.5 py-1 rounded border border-stone-150">Shower Rooms</span>
+              <div className="mt-4 pt-3 border-t border-stone-100 flex gap-1.5 flex-wrap text-[9.5px] uppercase font-bold text-stone-500">
+                <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-150">Main Lobby</span>
+                <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-150">Nail Bar</span>
+                <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-150">Shower Rooms</span>
               </div>
             </div>
           </div>
 
           {/* 2F Zone Card */}
           <div className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col group">
-            <div className="h-64 overflow-hidden relative">
+            <div className="h-56 overflow-hidden relative">
               <StepImageSlider 
                 images={["images/카페1.JPG", "images/카페2.JPG"]} 
                 alt="2F Vacation Cafe" 
@@ -541,18 +633,18 @@ export default function App() {
                 2F
               </div>
             </div>
-            <div className="p-6 flex-1 flex flex-col justify-between text-left">
+            <div className="p-5 flex-1 flex flex-col justify-between text-left">
               <div>
-                <h3 className="text-lg font-serif font-bold text-stone-900 mb-2">Vacation Cafe & Lounge</h3>
-                <p className="text-[11px] text-[#B5945F] font-bold uppercase tracking-wider mb-3">2F Private Resort Cafe & Waiting Lounge</p>
+                <h3 className="text-base font-serif font-bold text-stone-900 mb-1.5">Vacation Cafe & Lounge</h3>
+                <p className="text-[10px] text-[#B5945F] font-bold uppercase tracking-wider mb-2.5">2F Private Resort Cafe & Waiting Lounge</p>
                 <p className="text-xs text-stone-600 leading-relaxed font-semibold">
                    Basking in gentle natural light, the second-floor lounge features custom artisan furniture and tropical decorations—a relaxing retreat for companions and guests waiting for transfer services. Waiting guests are treated to refreshing cold welcome beverages.
                 </p>
               </div>
-              <div className="mt-5 pt-4 border-t border-stone-100 flex gap-2 flex-wrap text-[10px] uppercase font-bold text-stone-500">
-                <span className="bg-stone-50 px-2.5 py-1 rounded border border-stone-150">Relaxation Lounge</span>
-                <span className="bg-stone-50 px-2.5 py-1 rounded border border-stone-150">Fresh Welcome Drink</span>
-                <span className="bg-stone-50 px-2.5 py-1 rounded border border-stone-150">Luggage Zone</span>
+              <div className="mt-4 pt-3 border-t border-stone-100 flex gap-1.5 flex-wrap text-[9.5px] uppercase font-bold text-stone-500">
+                <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-150">Relaxation Lounge</span>
+                <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-150">Welcome Drink</span>
+                <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-150">Luggage Zone</span>
               </div>
             </div>
           </div>
@@ -560,30 +652,30 @@ export default function App() {
       </section>
 
       {/* ----------------- SIGNATURE JOURNEY (11 STEPS) ----------------- */}
-      <section id="journey" className="py-24 bg-stone-50 border-y border-stone-200/80 scroll-mt-16">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-serif tracking-tight text-stone-900">The Signature 11-Step Journey</h2>
-            <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">Yuju Spa's Signature 11-Step Luxury Healing & Restorative Journey</p>
+      <section id="journey" className="py-20 bg-stone-50 border-y border-stone-200/80 scroll-mt-16">
+        <div className="px-5">
+          <div className="text-center mb-12">
+            <h2 className="text-2.5xl font-serif tracking-tight text-stone-900">The Signature 11-Step Journey</h2>
+            <p className="text-[10.5px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">Yuju Spa's Signature 11-Step Luxury Healing & Restorative Journey</p>
             <div className="w-12 h-[1px] bg-amber-400/80 mx-auto mt-3"></div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="flex flex-col gap-6">
             {journeySteps.map((step, idx) => (
               <div 
                 key={idx} 
-                className="group bg-white p-6 border border-stone-200 rounded-lg flex flex-col justify-between hover:border-amber-500/30 hover:shadow-lg transition-all duration-300 pointer-events-auto"
+                className="group bg-white p-5 border border-stone-200 rounded-lg flex flex-col justify-between hover:border-amber-500/30 hover:shadow-lg transition-all duration-300 pointer-events-auto"
               >
                 <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-4xl font-serif italic text-amber-700/30 font-bold">{step.num}</span>
-                    <div className="text-2.5xl">{step.icon}</div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-3xl font-serif italic text-amber-700/30 font-bold">{step.num}</span>
+                    <div className="text-2xl">{step.icon}</div>
                   </div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#B5945F] mb-1">{step.title}</h3>
+                  <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-[#B5945F] mb-1">{step.title}</h3>
                   <h4 className="text-sm font-bold text-stone-900 mb-2">{step.titleKo}</h4>
-                  <p className="text-xs text-stone-600 leading-relaxed mb-5 font-semibold">{step.desc}</p>
+                  <p className="text-xs text-stone-600 leading-relaxed mb-4 font-semibold">{step.desc}</p>
                 </div>
-                <div className="w-full aspect-[4/3] bg-stone-100 rounded overflow-hidden mt-2 relative group-hover:scale-[1.01] transition-transform">
+                <div className="w-full aspect-[4/3] bg-stone-100 rounded overflow-hidden relative group-hover:scale-[1.01] transition-transform">
                   <StepImageSlider 
                     images={step.images} 
                     alt={step.title} 
@@ -597,20 +689,20 @@ export default function App() {
       </section>
 
       {/* ----------------- COMPREHENSIVE SERVICE MENU ----------------- */}
-      <section id="services" className="py-24 bg-[#FAF9F6] scroll-mt-16 border-t border-stone-200/40">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
+      <section id="services" className="py-20 bg-[#FAF9F6] scroll-mt-16 border-t border-stone-200/40">
+        <div className="px-5">
+          <div className="text-center mb-10">
             <h2 className="text-3xl font-serif text-stone-900 tracking-tight font-medium">Service Menu</h2>
-            <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2 font-sans">Aesthetic Spa Treatments & Professional Nail Art</p>
+            <p className="text-[10.5px] text-amber-700 uppercase tracking-widest font-extrabold mt-2 font-sans">Aesthetic Spa Treatments & Professional Nail Art</p>
             <div className="w-12 h-[1px] bg-amber-300 mx-auto mt-3"></div>
           </div>
 
           {/* Premium Minimal Tab Switcher */}
-          <div className="flex justify-center mb-12">
-            <div className="inline-flex p-1 bg-stone-100 rounded-lg border border-stone-200/60 shadow-3xs">
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex p-1 bg-stone-100 rounded-lg border border-stone-200/60 shadow-3xs w-full max-w-xs">
               <button 
                 onClick={() => setActiveServiceTab('spa')}
-                className={`px-8 py-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                className={`flex-1 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                   activeServiceTab === 'spa' 
                     ? "bg-stone-900 text-amber-100 shadow-sm" 
                     : "text-stone-500 hover:text-stone-850"
@@ -620,7 +712,7 @@ export default function App() {
               </button>
               <button 
                 onClick={() => setActiveServiceTab('nail')}
-                className={`px-8 py-2.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                className={`flex-1 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                   activeServiceTab === 'nail' 
                     ? "bg-stone-900 text-amber-100 shadow-sm" 
                     : "text-stone-500 hover:text-stone-850"
@@ -634,7 +726,7 @@ export default function App() {
           <div className="text-left">
             {activeServiceTab === 'spa' ? (
               // ----------------- YUJU SPA MENU -----------------
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+              <div className="flex flex-col gap-6 items-stretch">
                 {/* 1. Wellness Massage Card */}
                 <div className="bg-white border border-stone-200/80 p-6 rounded-xl relative shadow-3xs overflow-hidden flex flex-col justify-between hover:border-amber-500/35 hover:shadow-md transition-all duration-300">
                   <div className="absolute top-0 left-0 right-0 h-[3px] bg-amber-500/80"></div>
@@ -792,10 +884,10 @@ export default function App() {
               </div>
             ) : (
               // ----------------- YUJU NAIL MENU -----------------
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              <div className="flex flex-col gap-6 items-start w-full">
                 
                 {/* Left Column: Basic Care & Value Combos */}
-                <div className="space-y-8">
+                <div className="space-y-6 w-full">
                   {/* Basic Care List */}
                   <div className="bg-white border border-stone-200/80 p-6 rounded-xl shadow-3xs">
                     <h3 className="text-md font-serif font-bold text-stone-900 border-b border-stone-100 pb-3 mb-4 uppercase tracking-wider text-amber-800">Basic Care & Service</h3>
@@ -863,7 +955,7 @@ export default function App() {
                 </div>
 
                 {/* Right Column: Add-ons & Design of the month */}
-                <div className="space-y-8">
+                <div className="space-y-6 w-full">
                   {/* Options & Add-ons Grid */}
                   <div className="bg-white border border-stone-200/80 p-6 rounded-xl shadow-3xs">
                     <h3 className="text-md font-serif font-bold text-stone-900 border-b border-stone-100 pb-3 mb-4 uppercase tracking-wider text-amber-800">Nail Combo Option / Add-ons</h3>
@@ -944,15 +1036,15 @@ export default function App() {
       </section>
 
       {/* ----------------- AESTHETIC MOMENTS GALLERY ----------------- */}
-      <section id="gallery" className="py-24 bg-[#FAF9F5] border-t border-stone-200/80 scroll-mt-16">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
+      <section id="gallery" className="py-20 bg-[#FAF9F5] border-t border-stone-200/80 scroll-mt-16">
+        <div className="px-5">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-serif text-stone-900">Aesthetic Moments</h2>
-            <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">A visual journal of Yuju Spa's inviting ambiance and interior details</p>
+            <p className="text-[10.5px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">A visual journal of Yuju Spa's inviting ambiance and interior details</p>
             <div className="w-12 h-[1px] bg-amber-300 mx-auto mt-3"></div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-3">
             {[
               { src: "images/매장6-1.JPG", title: "Kids & Family Care Corner" },
               { src: "images/매장6-2.JPG", title: "Sterilized Clean Linen Station" },
@@ -989,27 +1081,27 @@ export default function App() {
       </section>
 
       {/* ----------------- NAIL ART PORTFOLIO SECTION ----------------- */}
-      <section id="nail" className="py-24 bg-[#FAF7F2] border-t border-stone-200/80 scroll-mt-16">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <div className="inline-block p-3.5 bg-amber-55 rounded-full text-amber-800 mb-4 border border-amber-900/5">
-            <Instagram className="w-8 h-8 text-amber-800" />
+      <section id="nail" className="py-20 bg-[#FAF7F2] border-t border-stone-200/80 scroll-mt-16">
+        <div className="px-5 text-center">
+          <div className="inline-block p-3 bg-amber-55 rounded-full text-amber-800 mb-3 border border-amber-900/5">
+            <Instagram className="w-6 h-6 text-amber-800" />
           </div>
           <h2 className="text-3xl font-serif text-stone-900">Nail Art Portfolio</h2>
-          <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">@yuju.nail_phuquoc</p>
-          <div className="w-12 h-[1px] bg-amber-400 mx-auto mt-3 mb-10"></div>
+          <p className="text-[10.5px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">@yuju.nail_phuquoc</p>
+          <div className="w-12 h-[1px] bg-amber-400 mx-auto mt-3 mb-8"></div>
           
           {/* Elfsight Instagram Feed Live Widget */}
-          <div className="w-full bg-white border border-stone-200/80 shadow-2xl p-4 md:p-6 rounded-xl flex justify-center items-center">
+          <div className="w-full bg-white border border-stone-200/80 shadow-lg p-3 rounded-xl flex justify-center items-center">
             {/* Elfsight Instagram Feed | 1 */}
             <div className="elfsight-app-3f91e9c2-8f8e-4588-944b-58ed05d63454 w-full flex justify-center" data-elfsight-app-lazy="true"></div>
           </div>
           
-          <div className="mt-8">
+          <div className="mt-6">
             <a 
               href="https://www.instagram.com/yuju.nail_phuquoc/reels/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-850 text-white font-bold text-xs uppercase tracking-wider py-4 px-8 shadow-md"
+              className="inline-flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-850 text-white font-bold text-xs uppercase tracking-wider py-3.5 px-6 shadow-md rounded"
             >
               Follow on Instagram Reels
               <ExternalLink className="w-3.5 h-3.5 text-stone-100" />
@@ -1019,13 +1111,13 @@ export default function App() {
       </section>
 
       {/* ----------------- FAQ (FREQUENTLY ASKED QUESTIONS) ACCORDION ----------------- */}
-      <section id="faq" className="py-24 bg-[#FAF9F6] border-t border-stone-200/80 scroll-mt-16 text-left">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
+      <section id="faq" className="py-20 bg-[#FAF9F6] border-t border-stone-200/80 scroll-mt-16 text-left">
+        <div className="px-5">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-serif text-stone-900">Frequently Asked Questions</h2>
-            <p className="text-[11px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">YUJU SPA Guide</p>
+            <p className="text-[10.5px] text-amber-700 uppercase tracking-widest font-extrabold mt-2">YUJU SPA Guide</p>
             <div className="w-12 h-[1px] bg-amber-400 mx-auto mt-3"></div>
-            <p className="text-stone-500 text-xs mt-4">Find answers to the most common questions our guests ask before visiting YUJU SPA.</p>
+            <p className="text-stone-500 text-xs mt-3">Find answers to the most common questions our guests ask before visiting YUJU SPA.</p>
           </div>
 
           <div className="space-y-4">
@@ -1092,17 +1184,17 @@ export default function App() {
       </section>
 
       {/* ----------------- COMPREHENSIVE LOCATION SECTION WITH GOOGLE MAP ----------------- */}
-      <section id="find-us" className="py-24 bg-white border-t border-stone-200/80 scroll-mt-16">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center text-left">
+      <section id="find-us" className="py-20 bg-white border-t border-stone-200/80 scroll-mt-16">
+        <div className="px-5">
+          <div className="flex flex-col gap-8 text-left">
             <div>
-              <h2 className="text-3xl font-serif text-stone-900 mb-2">Find Us</h2>
-              <p className="text-[11px] text-amber-500 uppercase tracking-widest font-extrabold mb-8">In the Heart of Phu Quoc</p>
+              <h2 className="text-3xl font-serif text-stone-900 mb-1.5">Find Us</h2>
+              <p className="text-[10.5px] text-amber-500 uppercase tracking-widest font-extrabold mb-6">In the Heart of Phu Quoc</p>
               
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest font-bold text-stone-400 mb-1">Spa Location Address</h4>
-                  <p className="text-sm font-semibold text-stone-800 flex items-start gap-2">
+                  <h4 className="text-[11px] uppercase tracking-widest font-bold text-stone-400 mb-1">Spa Location Address</h4>
+                  <p className="text-xs font-semibold text-stone-800 flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-[#B5945F] shrink-0 mt-0.5" />
                     <span className="flex flex-col">
                       <span>99A Tran Hung Dao Road, Khu Pho 7, Phu Quoc Island, Kien Giang, Vietnam</span>
@@ -1110,16 +1202,16 @@ export default function App() {
                         href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D" 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-amber-800 hover:underline text-xs font-bold mt-1.5 flex items-center gap-1"
+                        className="text-amber-800 hover:underline text-xs font-bold mt-1 flex items-center gap-1"
                       >
-                        Get Premium Directions on Google Maps →
+                        Directions on Google Maps →
                       </a>
                     </span>
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest font-bold text-stone-400 mb-1">Direct Phone</h4>
-                  <p className="text-sm font-mono font-bold text-stone-800 flex items-center gap-2">
+                  <h4 className="text-[11px] uppercase tracking-widest font-bold text-stone-400 mb-1">Direct Phone</h4>
+                  <p className="text-xs font-mono font-bold text-stone-800 flex items-center gap-2">
                     <Phone className="w-4 h-4 text-[#B5945F]" />
                     <a href="tel:+84978004100" className="hover:text-amber-800 transition-colors underline decoration-dotted">
                       +84 978 004 100
@@ -1127,20 +1219,20 @@ export default function App() {
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest font-bold text-stone-400 mb-1">Salon Operating Hours</h4>
-                  <p className="text-sm font-semibold text-stone-800 flex items-center gap-2">
+                  <h4 className="text-[11px] uppercase tracking-widest font-bold text-stone-400 mb-1">Salon Operating Hours</h4>
+                  <p className="text-xs font-semibold text-stone-800 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#B5945F]" />
-                    <span>Daily 06:00 AM – 12:00 Midnight (Open All Year, 365 Days)</span>
+                    <span>Daily 06:00 AM – 12:00 Midnight (365 Days)</span>
                   </p>
                 </div>
               </div>
  
-              <div className="mt-10 pt-6 border-t border-stone-100 flex flex-col md:flex-row gap-4">
+              <div className="mt-8 pt-5 border-t border-stone-100 flex flex-col gap-2.5">
                 <a 
                   href="https://wa.me/84978004100" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex-1 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs uppercase tracking-wider py-4 px-4 text-center rounded flex items-center justify-center gap-2 transition-colors duration-300"
+                  className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs uppercase tracking-wider py-3.5 px-4 text-center rounded flex items-center justify-center gap-2 transition-colors duration-300"
                 >
                   WhatsApp Inquiry
                 </a>
@@ -1148,15 +1240,15 @@ export default function App() {
                   href="https://www.instagram.com/yuju.nail_phuquoc/reels/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex-1 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-90 text-white font-bold text-xs uppercase tracking-wider py-4 px-4 text-center rounded flex items-center justify-center gap-2 transition-opacity duration-300"
+                  className="w-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-90 text-white font-bold text-xs uppercase tracking-wider py-3.5 px-4 text-center rounded flex items-center justify-center gap-2 transition-opacity duration-300"
                 >
                   Instagram DM
                 </a>
                 <a 
-                  href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D"
+                  href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex-1 bg-stone-900 hover:bg-stone-850 text-white font-bold text-xs uppercase tracking-wider py-4 px-4 text-center rounded flex items-center justify-center gap-2 transition-colors duration-300"
+                  className="w-full bg-stone-900 hover:bg-stone-850 text-white font-bold text-xs uppercase tracking-wider py-3.5 px-4 text-center rounded flex items-center justify-center gap-2 transition-colors duration-300"
                 >
                   Google Maps
                 </a>
@@ -1164,7 +1256,7 @@ export default function App() {
             </div>
  
             {/* Embedded map section */}
-            <div className="w-full aspect-video lg:h-96 border border-stone-200 shadow-xl overflow-hidden bg-stone-50 rounded-xl relative">
+            <div className="w-full h-72 border border-stone-200 shadow-md overflow-hidden bg-stone-50 rounded-xl relative">
               <iframe 
                 src="https://maps.google.com/maps?q=YUJU%20SPA%20Phu%20Quoc&t=&z=16&ie=UTF-8&iwloc=&output=embed" 
                 className="w-full h-full border-none"
@@ -1185,103 +1277,137 @@ export default function App() {
         <p>© 2026 YUJU SPA. All Rights Reserved.</p>
       </footer>
 
-      {/* ----------------- FLOATING CONTACT WIDGET ----------------- */}
-      <div className="fixed bottom-[96px] right-6 z-50 flex flex-col items-end">
-        {/* Menu list, appears when isContactMenuOpen is true */}
-        <div className={`transition-all duration-300 transform origin-bottom-right flex flex-col gap-3 mb-3 ${
-          isContactMenuOpen 
-            ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" 
-            : "opacity-0 scale-95 translate-y-4 pointer-events-none"
-        }`}>
-          {/* Option 1: WhatsApp */}
-          <a 
-            href="https://wa.me/84978004100" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-          >
-            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">WhatsApp Inquiry</span>
-            <div className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm">
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.528 2.01 14.069.99 11.519.99c-5.41 0-9.814 4.359-9.817 9.773-.002 1.902.51 3.721 1.481 5.347l-.95 3.466 3.593-.934c1.558.85 3.111 1.293 4.821 1.293zm9.057-7.113c-.247-.123-1.463-.722-1.692-.805-.229-.083-.396-.123-.562.124-.166.247-.645.805-.79 1.05-.145.247-.291.278-.538.155-.247-.123-1.043-.385-1.986-1.223-.733-.656-1.229-1.465-1.373-1.712-.145-.247-.016-.381.109-.504.111-.112.247-.29.371-.434.124-.145.166-.247.247-.412.083-.165.042-.31-.021-.434-.062-.124-.562-1.353-.77-1.85-.203-.491-.41-.424-.562-.431-.146-.007-.312-.008-.479-.008-.166 0-.437.062-.666.311-.229.248-.874.855-.874 2.083 0 1.228.895 2.415.992 2.548.096.136 1.761 2.69 4.269 3.774.597.257 1.063.411 1.425.526.6.19 1.144.163 1.576.099.48-.072 1.463-.598 1.671-1.175.208-.578.208-1.073.146-1.175-.062-.103-.229-.165-.476-.288z"/>
-              </svg>
-            </div>
-          </a>
+      {/* ----------------- FLOATING CONTACT & AUDIO WIDGET ----------------- */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-[480px] pointer-events-none z-50 flex justify-end px-4">
+        <div className="pointer-events-auto flex flex-col items-end gap-2.5">
+          {/* Menu list, appears when isContactMenuOpen is true */}
+          <div className={`transition-all duration-300 transform origin-bottom-right flex flex-col gap-3 mb-2 ${
+            isContactMenuOpen 
+              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" 
+              : "opacity-0 scale-95 translate-y-4 pointer-events-none"
+          }`}>
+            {/* Option 1: WhatsApp */}
+            <a 
+              href="https://wa.me/84978004100" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+            >
+              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">WhatsApp Inquiry</span>
+              <div className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.528 2.01 14.069.99 11.519.99c-5.41 0-9.814 4.359-9.817 9.773-.002 1.902.51 3.721 1.481 5.347l-.95 3.466 3.593-.934c1.558.85 3.111 1.293 4.821 1.293zm9.057-7.113c-.247-.123-1.463-.722-1.692-.805-.229-.083-.396-.123-.562.124-.166.247-.645.805-.79 1.05-.145.247-.291.278-.538.155-.247-.123-1.043-.385-1.986-1.223-.733-.656-1.229-1.465-1.373-1.712-.145-.247-.016-.381.109-.504.111-.112.247-.29.371-.434.124-.145.166-.247.247-.412.083-.165.042-.31-.021-.434-.062-.124-.562-1.353-.77-1.85-.203-.491-.41-.424-.562-.431-.146-.007-.312-.008-.479-.008-.166 0-.437.062-.666.311-.229.248-.874.855-.874 2.083 0 1.228.895 2.415.992 2.548.096.136 1.761 2.69 4.269 3.774.597.257 1.063.411 1.425.526.6.19 1.144.163 1.576.099.48-.072 1.463-.598 1.671-1.175.208-.578.208-1.073.146-1.175-.062-.103-.229-.165-.476-.288z"/>
+                </svg>
+              </div>
+            </a>
 
-          {/* Option 2: Spa Instagram DM */}
-          <a 
-            href="https://www.instagram.com/yuju.spa_phuquoc/" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-          >
-            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Spa Instagram DM</span>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
-              <Instagram className="w-5 h-5 text-white" />
-            </div>
-          </a>
+            {/* Option 2: Spa Instagram DM */}
+            <a 
+              href="https://www.instagram.com/yuju.spa_phuquoc/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+            >
+              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Spa Instagram DM</span>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
+                <Instagram className="w-5 h-5 text-white" />
+              </div>
+            </a>
 
-          {/* Option 3: Nail Instagram DM */}
-          <a 
-            href="https://www.instagram.com/yuju.nail_phuquoc/" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-          >
-            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Nail Instagram DM</span>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
-              <Instagram className="w-5 h-5 text-white" />
-            </div>
-          </a>
+            {/* Option 3: Nail Instagram DM */}
+            <a 
+              href="https://www.instagram.com/yuju.nail_phuquoc/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+            >
+              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Nail Instagram DM</span>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
+                <Instagram className="w-5 h-5 text-white" />
+              </div>
+            </a>
 
-          {/* Option 3: Google Maps */}
-          <a 
-            href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-          >
-            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Google Maps Route</span>
-            <div className="w-9 h-9 rounded-full bg-[#4285F4] text-white flex items-center justify-center shadow-sm">
-              <MapPin className="w-5 h-5 text-white" />
-            </div>
-          </a>
+            {/* Option 3: Google Maps */}
+            <a 
+              href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+            >
+              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Google Maps Route</span>
+              <div className="w-9 h-9 rounded-full bg-[#4285F4] text-white flex items-center justify-center shadow-sm">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+            </a>
 
-          {/* Option 4: Call Direct */}
-          <a 
-            href="tel:+84978004100" 
-            className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+            {/* Option 4: Call Direct */}
+            <a 
+              href="tel:+84978004100" 
+              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
+            >
+              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Call Direct</span>
+              <div className="w-9 h-9 rounded-full bg-[#B5945F] text-white flex items-center justify-center shadow-sm">
+                <Phone className="w-4 h-4 text-white" />
+              </div>
+            </a>
+          </div>
+
+          {/* Root Dial Toggle Button */}
+          <button 
+            onClick={() => setIsContactMenuOpen(!isContactMenuOpen)}
+            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform border border-amber-400 text-white cursor-pointer relative ${
+              isContactMenuOpen 
+                ? "bg-stone-900 rotate-180 hover:bg-stone-850" 
+                : "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 scale-100"
+            }`}
+            aria-label="Toggle contact menu"
           >
-            <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Call Direct</span>
-            <div className="w-9 h-9 rounded-full bg-[#B5945F] text-white flex items-center justify-center shadow-sm">
-              <Phone className="w-4 h-4 text-white" />
-            </div>
-          </a>
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
+            </span>
+            {isContactMenuOpen ? (
+              <X className="w-6 h-6 text-amber-100" />
+            ) : (
+              <Phone className="w-6 h-6 text-white" />
+            )}
+          </button>
+
+          {/* Music Play/Pause Toggle Button with clean international UI */}
+          <button
+            id="music-toggle-btn"
+            onClick={toggleMusic}
+            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 border cursor-pointer relative ${
+              isMusicPlaying
+                ? "bg-gradient-to-tr from-amber-600 to-amber-500 text-white border-amber-300 shadow-amber-900/40 scale-100 ring-2 ring-amber-400/30"
+                : "bg-stone-900/95 text-stone-400 border-stone-700 hover:text-white hover:bg-stone-800 hover:border-amber-500/50"
+            }`}
+            aria-label={isMusicPlaying ? "Turn music off" : "Turn music on"}
+            title={isMusicPlaying ? "Turn music off" : "Turn music on"}
+          >
+            {isMusicPlaying ? (
+              <Volume2 className="w-5 h-5 text-white animate-pulse" />
+            ) : (
+              <VolumeX className="w-5 h-5 text-stone-400" />
+            )}
+          </button>
         </div>
 
-        {/* Root Dial Toggle Button */}
-        <button 
-          onClick={() => setIsContactMenuOpen(!isContactMenuOpen)}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform border border-amber-400 text-white cursor-pointer relative ${
-            isContactMenuOpen 
-              ? "bg-stone-900 rotate-180 hover:bg-stone-850" 
-              : "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 scale-100"
-          }`}
-          aria-label="Toggle contact menu"
-        >
-          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
-          </span>
-          {isContactMenuOpen ? (
-            <X className="w-6 h-6 text-amber-100" />
-          ) : (
-            <Phone className="w-6 h-6 text-white" />
-          )}
-        </button>
+        {/* Persistent Audio Player */}
+        <audio
+          id="bgm-audio-player"
+          ref={audioRef}
+          src="/bgm.mp3"
+          loop
+          preload="auto"
+          playsInline
+          onPlay={() => setIsMusicPlaying(true)}
+          onPause={() => setIsMusicPlaying(false)}
+        />
       </div>
 
 
+      </div>
     </div>
   );
 }
