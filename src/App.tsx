@@ -281,8 +281,14 @@ export default function App() {
     }
   };
 
-  // FAQ state
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  // FAQ state (independent multi-toggle with zero latency)
+  const [openFaqIndices, setOpenFaqIndices] = useState<number[]>([0]);
+
+  const toggleFaq = (idx: number) => {
+    setOpenFaqIndices((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
+  };
 
 
 
@@ -1143,36 +1149,49 @@ export default function App() {
                 a: "Yes, you can request same-day reservations subject to slot availability. However, to secure your preferred time slots, we recommend booking 1-2 days in advance!"
               }
             ].map((item, idx) => {
-              const isOpen = openFaqIndex === idx;
+              const isOpen = openFaqIndices.includes(idx);
               return (
                 <div 
                   key={idx} 
-                  className="bg-white border border-stone-200/80 rounded-xl overflow-hidden shadow-xs hover:border-amber-500/20 transition-all duration-300"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  onClick={() => toggleFaq(idx)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleFaq(idx);
+                    }
+                  }}
+                  className={`w-full bg-white border transition-all duration-200 rounded-xl overflow-hidden shadow-xs cursor-pointer select-none touch-manipulation focus:outline-none focus:ring-2 focus:ring-amber-500/20 relative z-10 ${
+                    isOpen ? "border-amber-400/60 shadow-sm ring-1 ring-amber-400/20" : "border-stone-200/90 hover:border-amber-400/50 hover:shadow-sm"
+                  }`}
                 >
-                  <button
-                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full py-5 px-6 flex justify-between items-center text-left hover:bg-stone-50/50 transition-colors cursor-pointer focus:outline-none"
+                  <div
+                    className="w-full py-4 sm:py-5 px-5 sm:px-6 flex justify-between items-center text-left hover:bg-stone-50/70 transition-colors pointer-events-none"
                   >
-                    <div className="pr-4">
-                      <h3 className="font-semibold text-stone-850 text-[14px] sm:text-[15px] flex items-start gap-2.5">
+                    <div className="pr-4 pointer-events-none">
+                      <h3 className="font-semibold text-stone-850 text-[14px] sm:text-[15px] flex items-start gap-2.5 pointer-events-none">
                         <span className="text-amber-600 font-serif font-bold text-lg leading-none shrink-0">Q.</span>
-                        <span>{item.q}</span>
+                        <span className="leading-snug">{item.q}</span>
                       </h3>
                     </div>
-                    <div className="shrink-0 text-stone-400 p-1 bg-stone-50 rounded-lg">
-                      {isOpen ? <ChevronUp className="w-4 h-4 text-amber-600" /> : <ChevronDown className="w-4 h-4" />}
+                    <div className="shrink-0 text-stone-400 p-1.5 bg-stone-50 rounded-lg transition-colors pointer-events-none">
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-amber-600" /> : <ChevronDown className="w-4 h-4 text-stone-500" />}
                     </div>
-                  </button>
+                  </div>
                   
                   <div 
-                    className={`transition-all duration-300 overflow-hidden ${
-                      isOpen ? "max-h-[300px] border-t border-stone-100" : "max-h-0"
+                    className={`grid transition-[grid-template-rows] duration-200 ease-out pointer-events-none ${
+                      isOpen ? "grid-rows-[1fr] border-t border-stone-100" : "grid-rows-[0fr]"
                     }`}
                   >
-                    <div className="p-6 bg-[#FAF9F6]/50 text-stone-650 text-sm leading-relaxed">
-                      <div className="flex gap-2">
-                        <span className="font-serif font-bold text-stone-400 shrink-0">A.</span>
-                        <p className="text-stone-700 font-medium whitespace-pre-line">{item.a}</p>
+                    <div className="overflow-hidden min-h-0 pointer-events-none">
+                      <div className="p-5 sm:p-6 bg-[#FAF9F6]/70 hover:bg-[#FAF9F6] text-stone-650 text-sm leading-relaxed transition-colors pointer-events-none">
+                        <div className="flex gap-2.5 items-start pointer-events-none">
+                          <span className="font-serif font-bold text-amber-700 shrink-0 text-base">A.</span>
+                          <p className="text-stone-700 font-medium whitespace-pre-line text-[13.5px] sm:text-sm">{item.a}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1277,85 +1296,91 @@ export default function App() {
         <p>© 2026 YUJU SPA. All Rights Reserved.</p>
       </footer>
 
+      {/* Backdrop overlay when contact menu is open */}
+      {isContactMenuOpen && (
+        <div 
+          onClick={() => setIsContactMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] pointer-events-auto"
+        />
+      )}
+
       {/* ----------------- FLOATING CONTACT & AUDIO WIDGET ----------------- */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-[480px] pointer-events-none z-50 flex justify-end px-4">
-        <div className="pointer-events-auto flex flex-col items-end gap-2.5">
-          {/* Menu list, appears when isContactMenuOpen is true */}
-          <div className={`transition-all duration-300 transform origin-bottom-right flex flex-col gap-3 mb-2 ${
-            isContactMenuOpen 
-              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" 
-              : "opacity-0 scale-95 translate-y-4 pointer-events-none"
-          }`}>
-            {/* Option 1: WhatsApp */}
-            <a 
-              href="https://wa.me/84978004100" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-            >
-              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">WhatsApp Inquiry</span>
-              <div className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm">
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.528 2.01 14.069.99 11.519.99c-5.41 0-9.814 4.359-9.817 9.773-.002 1.902.51 3.721 1.481 5.347l-.95 3.466 3.593-.934c1.558.85 3.111 1.293 4.821 1.293zm9.057-7.113c-.247-.123-1.463-.722-1.692-.805-.229-.083-.396-.123-.562.124-.166.247-.645.805-.79 1.05-.145.247-.291.278-.538.155-.247-.123-1.043-.385-1.986-1.223-.733-.656-1.229-1.465-1.373-1.712-.145-.247-.016-.381.109-.504.111-.112.247-.29.371-.434.124-.145.166-.247.247-.412.083-.165.042-.31-.021-.434-.062-.124-.562-1.353-.77-1.85-.203-.491-.41-.424-.562-.431-.146-.007-.312-.008-.479-.008-.166 0-.437.062-.666.311-.229.248-.874.855-.874 2.083 0 1.228.895 2.415.992 2.548.096.136 1.761 2.69 4.269 3.774.597.257 1.063.411 1.425.526.6.19 1.144.163 1.576.099.48-.072 1.463-.598 1.671-1.175.208-.578.208-1.073.146-1.175-.062-.103-.229-.165-.476-.288z"/>
-                </svg>
-              </div>
-            </a>
+        <div className="pointer-events-none flex flex-col items-end gap-2.5">
+          {/* Menu list, appears only when isContactMenuOpen is true to avoid invisible click blocking */}
+          {isContactMenuOpen && (
+            <div className="flex flex-col gap-3 mb-2 pointer-events-auto">
+              {/* Option 1: WhatsApp */}
+              <a 
+                href="https://wa.me/84978004100" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1 pointer-events-auto cursor-pointer"
+              >
+                <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">WhatsApp Inquiry</span>
+                <div className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-sm">
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.528 2.01 14.069.99 11.519.99c-5.41 0-9.814 4.359-9.817 9.773-.002 1.902.51 3.721 1.481 5.347l-.95 3.466 3.593-.934c1.558.85 3.111 1.293 4.821 1.293zm9.057-7.113c-.247-.123-1.463-.722-1.692-.805-.229-.083-.396-.123-.562.124-.166.247-.645.805-.79 1.05-.145.247-.291.278-.538.155-.247-.123-1.043-.385-1.986-1.223-.733-.656-1.229-1.465-1.373-1.712-.145-.247-.016-.381.109-.504.111-.112.247-.29.371-.434.124-.145.166-.247.247-.412.083-.165.042-.31-.021-.434-.062-.124-.562-1.353-.77-1.85-.203-.491-.41-.424-.562-.431-.146-.007-.312-.008-.479-.008-.166 0-.437.062-.666.311-.229.248-.874.855-.874 2.083 0 1.228.895 2.415.992 2.548.096.136 1.761 2.69 4.269 3.774.597.257 1.063.411 1.425.526.6.19 1.144.163 1.576.099.48-.072 1.463-.598 1.671-1.175.208-.578.208-1.073.146-1.175-.062-.103-.229-.165-.476-.288z"/>
+                  </svg>
+                </div>
+              </a>
 
-            {/* Option 2: Spa Instagram DM */}
-            <a 
-              href="https://www.instagram.com/yuju.spa_phuquoc/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-            >
-              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Spa Instagram DM</span>
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
-                <Instagram className="w-5 h-5 text-white" />
-              </div>
-            </a>
+              {/* Option 2: Spa Instagram DM */}
+              <a 
+                href="https://www.instagram.com/yuju.spa_phuquoc/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1 pointer-events-auto cursor-pointer"
+              >
+                <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Spa Instagram DM</span>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
+                  <Instagram className="w-5 h-5 text-white" />
+                </div>
+              </a>
 
-            {/* Option 3: Nail Instagram DM */}
-            <a 
-              href="https://www.instagram.com/yuju.nail_phuquoc/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-            >
-              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Nail Instagram DM</span>
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
-                <Instagram className="w-5 h-5 text-white" />
-              </div>
-            </a>
+              {/* Option 3: Nail Instagram DM */}
+              <a 
+                href="https://www.instagram.com/yuju.nail_phuquoc/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1 pointer-events-auto cursor-pointer"
+              >
+                <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Nail Instagram DM</span>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] text-white flex items-center justify-center shadow-sm">
+                  <Instagram className="w-5 h-5 text-white" />
+                </div>
+              </a>
 
-            {/* Option 3: Google Maps */}
-            <a 
-              href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-            >
-              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Google Maps Route</span>
-              <div className="w-9 h-9 rounded-full bg-[#4285F4] text-white flex items-center justify-center shadow-sm">
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
-            </a>
+              {/* Option 4: Google Maps */}
+              <a 
+                href="https://www.google.com/maps/place/YUJU+SPA+Phu+Quoc/@10.2026073,103.9652814,16z/data=!3m1!4b1!4m6!3m5!1s0x31a78d7724c83e09:0x288aa007498a6cb2!8m2!3d10.2040486!4d103.9644016!16s%2Fg%2F11v0j5grw7?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1 pointer-events-auto cursor-pointer"
+              >
+                <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Google Maps Route</span>
+                <div className="w-9 h-9 rounded-full bg-[#4285F4] text-white flex items-center justify-center shadow-sm">
+                  <MapPin className="w-5 h-5 text-white" />
+                </div>
+              </a>
 
-            {/* Option 4: Call Direct */}
-            <a 
-              href="tel:+84978004100" 
-              className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1"
-            >
-              <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Call Direct</span>
-              <div className="w-9 h-9 rounded-full bg-[#B5945F] text-white flex items-center justify-center shadow-sm">
-                <Phone className="w-4 h-4 text-white" />
-              </div>
-            </a>
-          </div>
+              {/* Option 5: Call Direct */}
+              <a 
+                href="tel:+84978004100" 
+                className="flex items-center gap-3 bg-white hover:bg-stone-50 text-stone-850 px-4 py-3 rounded-full shadow-lg border border-stone-200/80 transition-all duration-300 group hover:-translate-x-1 pointer-events-auto cursor-pointer"
+              >
+                <span className="text-xs font-bold font-serif whitespace-nowrap text-stone-800">Call Direct</span>
+                <div className="w-9 h-9 rounded-full bg-[#B5945F] text-white flex items-center justify-center shadow-sm">
+                  <Phone className="w-4 h-4 text-white" />
+                </div>
+              </a>
+            </div>
+          )}
 
           {/* Root Dial Toggle Button */}
           <button 
             onClick={() => setIsContactMenuOpen(!isContactMenuOpen)}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform border border-amber-400 text-white cursor-pointer relative ${
+            className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform border border-amber-400 text-white cursor-pointer relative ${
               isContactMenuOpen 
                 ? "bg-stone-900 rotate-180 hover:bg-stone-850" 
                 : "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 scale-100"
@@ -1377,7 +1402,7 @@ export default function App() {
           <button
             id="music-toggle-btn"
             onClick={toggleMusic}
-            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 border cursor-pointer relative ${
+            className={`pointer-events-auto w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 border cursor-pointer relative ${
               isMusicPlaying
                 ? "bg-gradient-to-tr from-amber-600 to-amber-500 text-white border-amber-300 shadow-amber-900/40 scale-100 ring-2 ring-amber-400/30"
                 : "bg-stone-900/95 text-stone-400 border-stone-700 hover:text-white hover:bg-stone-800 hover:border-amber-500/50"
