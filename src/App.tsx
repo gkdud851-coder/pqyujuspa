@@ -1388,6 +1388,11 @@ export default function App() {
             <p className="text-[11px] text-stone-500 text-center">
               QR코드를 길게 눌러 인식하거나 스캔해서 친구 추가해주세요.
             </p>
+            {qrModal === 'wechat' && (
+              <p className="text-xs font-semibold text-stone-700 text-center tracking-wide">
+                WeChat ID: yujuspaphuquoc
+              </p>
+            )}
             <button 
               onClick={handleCopyMessage}
               className="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs uppercase tracking-wider py-3 px-4 rounded flex items-center justify-center gap-2 transition-colors duration-300"
