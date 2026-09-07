@@ -51,7 +51,11 @@ function resolveImage(path: string): string {
 function resolveVideo(path: string): string {
   const fileName = path.split('/').pop();
   if (fileName) {
-    const matchedKey = Object.keys(srcVideos).find(key => key.endsWith('/' + fileName));
+    const cleanFileName = decodeURIComponent(fileName).toLowerCase();
+    const matchedKey = Object.keys(srcVideos).find(key => {
+      const k = decodeURIComponent(key).toLowerCase();
+      return k.endsWith('/' + cleanFileName);
+    });
     if (matchedKey) {
       return srcVideos[matchedKey] as string;
     }
@@ -211,12 +215,21 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
-  // Sequential 3-video playlist (Video 1 -> Video 2 -> Video 3 -> Loop)
-  const heroVideos = useMemo(() => [
-    resolveVideo('images/메인영상.mp4'),
-    '/video2.mp4',
-    '/video3.mp4'
-  ], []);
+  // Sequential 4-video playlist:
+  // Video 1 (비디오 7) -> Video 2 (메인 영상) -> Video 3 (video2) -> Video 4 (video3) -> Loop
+  const heroVideos = useMemo(() => {
+    const v7Key = Object.keys(srcVideos).find(key => {
+      const lower = decodeURIComponent(key).toLowerCase();
+      return lower.includes('비디오7') || lower.includes('video7') || lower.includes('비디오 7') || lower.includes('video 7') || lower.endsWith('/7.mp4');
+    });
+
+    const video7 = v7Key ? (srcVideos[v7Key] as string) : '/video7.mp4';
+    const mainVideo = resolveVideo('images/메인영상.mp4');
+    const video2 = '/video2.mp4';
+    const video3 = '/video3.mp4';
+
+    return [video7, mainVideo, video2, video3];
+  }, []);
 
   const handleVideoEnded = () => {
     setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
@@ -504,7 +517,7 @@ export default function App() {
           {/* Video Indicators for multiple clips */}
           {heroVideos.length > 1 && (
             <div className="absolute top-4 right-4 z-20 flex gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1.5 rounded-full border border-white/20 pointer-events-auto">
-              {heroVideos.slice(0, 3).map((_, idx) => (
+              {heroVideos.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentVideoIndex(idx)}
