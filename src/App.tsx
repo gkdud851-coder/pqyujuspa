@@ -38,6 +38,18 @@ const trackContact = (channel: string) => {
     (window as any).dataLayer.push({ event: 'contact_click', contact_channel: channel });
     if (typeof (window as any).gtag === 'function') {
       (window as any).gtag('event', 'contact_click', { event_category: 'contact', event_label: channel });
+        const conversionLabels: { [key: string]: string } = {
+          kakaotalk: 'AW-18424835111/69IxCP-r-fAcEKfY0tFE',
+          wechat: 'AW-18424835111/dwj2CI_Y_PAcEKfY0tFE',
+          line: 'AW-18424835111/FUGpCI_S8vAcEKfY0tFE',
+          spa_instagram: 'AW-18424835111/58tgCP2T_fAcEKfY0tFE',
+          nail_instagram: 'AW-18424835111/1oehCNDm-PAcEKfY0tFE',
+          google_maps: 'AW-18424835111/mzFRCK_wg_EcEKfY0tFE',
+        };
+        const conversionLabel = conversionLabels[channel];
+        if (conversionLabel) {
+          (window as any).gtag('event', 'conversion', { send_to: conversionLabel, value: 1.0, currency: 'KRW' });
+        }
     }
   } catch (e) {}
 };
