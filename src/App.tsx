@@ -31,6 +31,7 @@ import {
   MessageCircle,
   Send,
 } from 'lucide-react';
+import tripadvisorBadgeImg from './images/tripadvisor-travellers-choice-2025-badge.png';
 // --- Contact channel click tracking (Google Ads / GTM dataLayer) ---
 const trackContact = (channel: string) => {
   try {
@@ -678,6 +679,27 @@ export default function App() {
             <div className="text-xl mb-1.5">💝</div>
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Charity Fund</h4>
             <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Kids & Relief</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-xl mb-1.5 flex items-center justify-center">
+              <img 
+                src={tripadvisorBadgeImg} 
+                alt="Tripadvisor Travellers' Choice 2025" 
+                className="w-6 h-6 object-contain" 
+              />
+            </div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Award Winning</h4>
+            <p className="text-[8px] text-amber-700 mt-0.5 uppercase font-bold leading-tight">Tripadvisor Travellers' Choice 2025</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-xl mb-1.5">🧖</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Group Spa</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Up To 40 Guests At Once</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-xl mb-1.5">🙋</div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-900">Solo Welcome</h4>
+            <p className="text-[8px] text-stone-550 mt-0.5 uppercase font-semibold">Single Guests Welcome</p>
           </div>
         </div>
       </section>
