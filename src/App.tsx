@@ -45,6 +45,7 @@ const trackContact = (channel: string) => {
           spa_instagram: 'AW-18424835111/58tgCP2T_fAcEKfY0tFE',
           nail_instagram: 'AW-18424835111/1oehCNDm-PAcEKfY0tFE',
           google_maps: 'AW-18424835111/mzFRCK_wg_EcEKfY0tFE',
+          phone: 'AW-18424835111/AWKwCI26vfccEKfY0tFE',
         };
         const conversionLabel = conversionLabels[channel];
         if (conversionLabel) {
@@ -449,17 +450,52 @@ export default function App() {
     }
   ];
 
-  // Dynamically load Elfsight script on mount
+  // Align Elfsight translator inside the centered 480px mobile frame on PC/Desktop
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://elfsightcdn.com/platform.js';
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+    const desktopStyleText = `
+      @media (min-width: 481px) {
+        :host,
+        [class*="es-embed-root"],
+        [class*="StyledEmbedRoot"],
+        [class*="website-translator"],
+        div[class*="Popout__PopoutWrapper"] {
+          right: calc((100vw - 480px) / 2) !important;
+          left: auto !important;
+        }
       }
+    `;
+
+    // Inject into document head for light DOM elements
+    if (!document.getElementById('yuju-elfsight-desktop-style')) {
+      const headStyle = document.createElement('style');
+      headStyle.id = 'yuju-elfsight-desktop-style';
+      headStyle.textContent = desktopStyleText;
+      document.head.appendChild(headStyle);
+    }
+
+    const applyDesktopPosition = () => {
+      // Find all shadow roots (Elfsight attaches open shadow roots)
+      const allElements = document.querySelectorAll('*');
+      allElements.forEach((el) => {
+        if (el.shadowRoot && !el.shadowRoot.getElementById('yuju-elfsight-shadow-style')) {
+          const shadowStyle = document.createElement('style');
+          shadowStyle.id = 'yuju-elfsight-shadow-style';
+          shadowStyle.textContent = desktopStyleText;
+          try {
+            el.shadowRoot.appendChild(shadowStyle);
+          } catch (e) {}
+        }
+      });
+    };
+
+    applyDesktopPosition();
+    const interval = setInterval(applyDesktopPosition, 1000);
+    const observer = new MutationObserver(applyDesktopPosition);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
     };
   }, []);
 
