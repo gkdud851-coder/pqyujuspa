@@ -53,6 +53,9 @@ const trackContact = (channel: string) => {
           (window as any).gtag('event', 'conversion', { send_to: conversionLabel, value: 1.0, currency: 'KRW' });
         }
     }
+    if (typeof (window as any).fbq === 'function') {
+      (window as any).fbq('track', 'Contact', { content_name: channel });
+    }
   } catch (e) {}
 };
 
